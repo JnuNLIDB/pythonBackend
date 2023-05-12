@@ -109,9 +109,10 @@ class AsyncSQLDatabaseChain(Chain):
         sql_cmd = await self.llm_chain.apredict(
             callbacks=_run_manager.get_child(), **llm_inputs
         )
+        sql_cmd = sql_cmd.strip(' "')
         intermediate_steps.append(sql_cmd)
         await _run_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
-        result = await self.database.run(sql_cmd)
+        result = await self.database.run(sql_cmd) if sql_cmd != "N/A" else "N/A"
         intermediate_steps.append(result)
         await _run_manager.on_text("\nSQLResult: ", verbose=self.verbose)
         await _run_manager.on_text(result, color="yellow", verbose=self.verbose)
