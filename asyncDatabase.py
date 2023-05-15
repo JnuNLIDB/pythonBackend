@@ -267,7 +267,7 @@ class AsyncSQLDatabase:
             """Format the error message"""
             return f"Error: {e}"
 
-    def run_no_throw(self, command: str, fetch: str = "all") -> str:
+    async def run_no_throw(self, command: str, fetch: str = "all") -> str:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
@@ -276,7 +276,7 @@ class AsyncSQLDatabase:
         If the statement throws an error, the error message is returned.
         """
         try:
-            return self.run(command, fetch)
+            return await self.run(command, fetch)
         except SQLAlchemyError as e:
             """Format the error message"""
             return f"Error: {e}"
