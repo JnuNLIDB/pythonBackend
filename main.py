@@ -10,7 +10,7 @@ from starlette.middleware.cors import CORSMiddleware
 from asyncDBChain import AsyncSQLDatabaseChain
 from asyncDatabase import AsyncSQLDatabase
 from asyncTools import AsyncSQLDatabaseToolkit, create_sql_agent
-from config import OPENAI_API_KEY
+from config import OPENAI_API_KEY, POSTGRES_URI
 
 app = FastAPI()
 os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
@@ -41,7 +41,7 @@ async def nlidb(request: Request):
     if j['llm'] != 'openai':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid provider")
 
-    db = await AsyncSQLDatabase.from_uri("postgresql+asyncpg://postgres:Vincent!!$514@localhost/news")
+    db = await AsyncSQLDatabase.from_uri(POSTGRES_URI)
     llm = OpenAI(temperature=0 if 'temperature' not in j else int(j['temperature']))
     with get_openai_callback() as cb:
         try:
