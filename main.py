@@ -3,7 +3,7 @@ import logging
 import os
 
 from fastapi import FastAPI, Request, HTTPException, status
-from langchain import OpenAI, SQLDatabase, SQLDatabaseChain
+from langchain import OpenAI
 from langchain.callbacks import get_openai_callback
 from starlette.middleware.cors import CORSMiddleware
 
@@ -11,6 +11,12 @@ from asyncDBChain import AsyncSQLDatabaseChain
 from asyncDatabase import AsyncSQLDatabase
 from asyncTools import AsyncSQLDatabaseToolkit, create_sql_agent
 from config import OPENAI_API_KEY, POSTGRES_URI
+
+import openai
+openai.proxy = {
+    "http": "http://127.0.0.1:10809",
+    "https": "http://127.0.0.1:10809"
+}
 
 app = FastAPI()
 os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
@@ -28,9 +34,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+db = None
+
 
 @app.post("/v1/nlidb")
 async def nlidb(request: Request):
+    global db
+    if db is None:
+        db = await AsyncSQLDatabase.from_uri(POSTGRES_URI)
     try:
         j = await request.json()
     except json.decoder.JSONDecodeError:
@@ -40,16 +51,15 @@ async def nlidb(request: Request):
 
     if j['llm'] != 'openai':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid provider")
-
-    db = await AsyncSQLDatabase.from_uri(POSTGRES_URI)
     llm = OpenAI(temperature=0 if 'temperature' not in j else int(j['temperature']))
+
     with get_openai_callback() as cb:
         try:
             toolkit = AsyncSQLDatabaseToolkit(db=db, llm=llm)
             agent_executor = create_sql_agent(
                 llm=llm,
                 toolkit=toolkit,
-                verbose=False
+                verbose=True
             )
             result = await agent_executor.arun(j['question'])
         except Exception as e1:

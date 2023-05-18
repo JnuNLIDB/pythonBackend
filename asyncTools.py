@@ -6,19 +6,17 @@ from langchain.agents import AgentExecutor, ZeroShotAgent
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.agents.agent_toolkits.sql.prompt import SQL_PREFIX, SQL_SUFFIX
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.callbacks.base import BaseCallbackManager
-from pydantic import BaseModel, Extra, Field, root_validator
-
 from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.sql_database import SQLDatabase
 from langchain.tools.base import BaseTool
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from asyncDatabase import AsyncSQLDatabase
 
