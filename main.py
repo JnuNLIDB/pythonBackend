@@ -54,7 +54,7 @@ async def nlidb(request: Request):
     if j['llm'] != 'openai':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid provider")
     llm = OpenAI(temperature=0 if 'temperature' not in j else int(j['temperature']))
-    chat = ChatOpenAI(temperature=0 if 'temperature' not in j else int(j['temperature']))
+    chat = ChatOpenAI(temperature=1)
 
     with get_openai_callback() as cb:
         resp = await chat.agenerate([[HumanMessage(content=j['question'])]])
@@ -69,7 +69,8 @@ async def nlidb(request: Request):
             )
             k = await agent_executor.arun(j['question'])
             if "Not related to database" in k:
-                k = resp
+                k = await chat.agenerate([[HumanMessage(content=j['question'])]])
+                k = k.generations[0][0].text
             result += k
         except Exception as e1:
             try:
