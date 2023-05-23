@@ -54,7 +54,7 @@ async def nlidb(request: Request):
     llm = OpenAI(temperature=0 if 'temperature' not in j else int(j['temperature']))
 
     with get_openai_callback() as cb:
-        result = "GPT: " + llm.generate([j['question']])[0] + "\n====================\nWith Postgres: "
+        result = "GPT: " + llm(j['question']) + "\n====================\nWith Postgres: "
         try:
             toolkit = AsyncSQLDatabaseToolkit(db=db, llm=llm)
             agent_executor = create_sql_agent(
