@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, List
 
 from langchain.agents import AgentExecutor, ZeroShotAgent
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.agents.agent_toolkits.sql.prompt import SQL_PREFIX, SQL_SUFFIX
+from langchain.agents.agent_toolkits.sql.prompt import SQL_SUFFIX
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
@@ -20,6 +20,19 @@ from pydantic import BaseModel, Extra, Field, root_validator
 
 from asyncDatabase import AsyncSQLDatabase
 
+SQL_PREFIX = """You are an agent designed to interact with a SQL database.
+Given an input question, create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer.
+Unless the user specifies a specific number of examples they wish to obtain, always limit your query to at most {top_k} results.
+You can order the results by a relevant column to return the most interesting examples in the database.
+Never query for all the columns from a specific table, only ask for the relevant columns given the question.
+You have access to tools for interacting with the database.
+Only use the below tools. Only use the information returned by the below tools to construct your final answer.
+You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
+
+DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
+
+If the question does not seem related to the database, just respond as normal not querying the database.
+"""
 
 class BaseSQLDatabaseTool(BaseModel):
     """Base tool for interacting with a SQL database."""
