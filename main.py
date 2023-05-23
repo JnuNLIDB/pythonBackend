@@ -54,18 +54,19 @@ async def nlidb(request: Request):
     llm = OpenAI(temperature=0 if 'temperature' not in j else int(j['temperature']))
 
     with get_openai_callback() as cb:
+        result = "GPT: " + llm.generate([j['question']])[0] + "\n====================\nWith Postgres: "
         try:
             toolkit = AsyncSQLDatabaseToolkit(db=db, llm=llm)
             agent_executor = create_sql_agent(
                 llm=llm,
                 toolkit=toolkit,
-                verbose=True
+                verbose=False
             )
-            result = await agent_executor.arun(j['question'])
+            result += await agent_executor.arun(j['question'])
         except Exception as e1:
             try:
                 chain = AsyncSQLDatabaseChain.from_llm(llm, db)
-                result = await chain.arun(j['question'])
+                result += await chain.arun(j['question'])
             except Exception as e2:
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e1) + str(e2))
         finally:
