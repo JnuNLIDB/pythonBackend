@@ -5,6 +5,8 @@ import os
 from fastapi import FastAPI, Request, HTTPException, status
 from langchain import OpenAI
 from langchain.callbacks import get_openai_callback
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import HumanMessage
 from starlette.middleware.cors import CORSMiddleware
 
 from asyncDBChain import AsyncSQLDatabaseChain
@@ -52,9 +54,12 @@ async def nlidb(request: Request):
     if j['llm'] != 'openai':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid provider")
     llm = OpenAI(temperature=0 if 'temperature' not in j else int(j['temperature']))
+    chat = ChatOpenAI(temperature=0 if 'temperature' not in j else int(j['temperature']))
 
     with get_openai_callback() as cb:
-        result = "GPT: " + llm(j['question']) + "\n====================\nWith Postgres: "
+        resp = await chat.agenerate([[HumanMessage(content=j['question'])]])
+        resp = resp.generations[0][0].text
+        result = "GPT: " + resp + "\n====================\nWith Postgres: "
         try:
             toolkit = AsyncSQLDatabaseToolkit(db=db, llm=llm)
             agent_executor = create_sql_agent(
