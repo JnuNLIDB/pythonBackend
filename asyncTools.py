@@ -31,7 +31,7 @@ You MUST double check your query before executing it. If you get an error while 
 
 DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
 
-If the question does not seem related to the database, just respond as normal as if the database did not exist, like chatting with a friend.
+If the question does not seem related to the database, just return "Not related to database" as the answer.
 """
 
 

@@ -67,7 +67,10 @@ async def nlidb(request: Request):
                 toolkit=toolkit,
                 verbose=False
             )
-            result += await agent_executor.arun(j['question'])
+            k = await agent_executor.arun(j['question'])
+            if "Not related to database" in k:
+                k = resp
+            result += k
         except Exception as e1:
             try:
                 chain = AsyncSQLDatabaseChain.from_llm(llm, db)
