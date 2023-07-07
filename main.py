@@ -2,6 +2,7 @@ import json.decoder
 import logging
 import os
 
+import openai
 from fastapi import FastAPI, Request, HTTPException, status
 from langchain import OpenAI
 from langchain.callbacks import get_openai_callback
@@ -14,7 +15,6 @@ from asyncDatabase import AsyncSQLDatabase
 from asyncTools import AsyncSQLDatabaseToolkit, create_sql_agent
 from config import OPENAI_API_KEY, POSTGRES_URI
 
-import openai
 openai.proxy = {
     "http": "http://127.0.0.1:10809",
     "https": "http://127.0.0.1:10809"

@@ -4,14 +4,13 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, Field, root_validator
-
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun, AsyncRunManager
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
 from langchain.prompts.base import BasePromptTemplate
+from pydantic import Extra, Field, root_validator
 
 from asyncDatabase import AsyncSQLDatabase
 

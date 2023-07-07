@@ -1,9 +1,10 @@
-fastapi~=0.95.1
-langchain~=0.0.166
+fastapi==0.99.1
+langchain==0.0.226
 openai~=0.27.6
-SQLAlchemy~=2.0.13
 sqlalchemy[asyncio]
 aiosqlite
-pydantic~=1.10.7
+pydantic==1.10.10
 psycopg2
 asyncpg
+elasticsearch
+tqdm

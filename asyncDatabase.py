@@ -8,12 +8,11 @@ import sqlalchemy
 from sqlalchemy import (
     MetaData,
     Table,
-    create_engine,
     inspect,
     select,
     text, Connection,
 )
-from sqlalchemy.engine import CursorResult, Engine
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncConnection
 from sqlalchemy.schema import CreateTable
