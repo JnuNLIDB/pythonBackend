@@ -8,3 +8,4 @@ psycopg2
 asyncpg
 elasticsearch
 tqdm
+json-stream

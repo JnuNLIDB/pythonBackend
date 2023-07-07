@@ -1,4 +1,4 @@
-import json
+import json_stream
 
 from elasticsearch import Elasticsearch
 from tqdm import tqdm
@@ -19,9 +19,10 @@ except Exception as e:
 
 if __name__ == '__main__':
     actions = []
-    for row in tqdm(json.load(open("./report_2022_new.json", "r", encoding="utf-8"))):
+    for i, row in enumerate(json_stream.load(open("./report_2022_new.json", "r", encoding="utf-8"))):
         resp = es_client.index(index="opinion", id=row["id"], document=row)
-        print(resp.body)
+        if i % 1000 == 0:
+            print(f"At: {i}")
 
     result = es_client.count(index="opinion")
     print(result.body['count'])
