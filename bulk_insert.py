@@ -5,9 +5,8 @@ from tqdm import tqdm
 
 es_client = Elasticsearch("http://localhost:9200")
 
-es_client.indices.create(
-    index="opinion",
-)
+es_client.indices.create(index="opinion")
+
 if __name__ == '__main__':
     actions = []
     for row in tqdm(json.load(open("./report_2022_new.json", "r", encoding="utf-8"))):
