@@ -5,7 +5,17 @@ from tqdm import tqdm
 
 es_client = Elasticsearch("http://localhost:9200")
 
-es_client.indices.create(index="opinion")
+print("Try Deleting...")
+try:
+    es_client.indices.delete(index="opinion")
+except Exception as e:
+    print(f"Error: {e}")
+
+print("Try Create...")
+try:
+    es_client.indices.create(index="opinion")
+except Exception as e:
+    print(f"Error: {e}")
 
 if __name__ == '__main__':
     actions = []
