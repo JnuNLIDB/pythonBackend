@@ -9,3 +9,5 @@ asyncpg
 elasticsearch
 tqdm
 json-stream
+tiktoken
+chromadb
