@@ -43,38 +43,23 @@ app.add_middleware(
 db = None
 
 embeddings = OpenAIEmbeddings()
-philippines = Chroma(
-    collection_name="philippines", persist_directory="./news", embedding_function=embeddings
-)
-south_china_sea = Chroma(
-    collection_name="south_china_sea", persist_directory="./news", embedding_function=embeddings
-)
-tibet = Chroma(
-    collection_name="tibet", persist_directory="./news", embedding_function=embeddings
-)
-xin_jiang = Chroma(
-    collection_name="xin_jiang", persist_directory="./news", embedding_function=embeddings
-)
-philippines_info = VectorStoreInfo(
-    name="philippines",
-    description="the most recent news from philippines",
-    vectorstore=philippines,
-)
-south_china_sea_info = VectorStoreInfo(
-    name="south_china_sea",
-    description="the most recent news from south_china_sea",
-    vectorstore=south_china_sea,
-)
-tibet_info = VectorStoreInfo(
-    name="tibet",
-    description="the most recent news from tibet",
-    vectorstore=tibet,
-)
-xin_jiang_info = VectorStoreInfo(
-    name="xin_jiang",
-    description="the most recent news from xin_jiang",
-    vectorstore=xin_jiang,
-)
+
+names = [
+    'philippines', 'south_china_sea', 'tibet', 'xin_jiang', 'xi_jin_ping',
+    'one_road', 'china_threat', 'south_china_sea', 'russia_ukraine_conflict_world',
+    'community_of_human_fate', 'russia_ukraine_conflict_china'
+]
+vector_infos = []
+for name in names:
+    vector = Chroma(
+        collection_name=name, persist_directory="./news", embedding_function=embeddings
+    )
+    vector_info = VectorStoreInfo(
+        name=name,
+        description="the most recent news of " + name,
+        vectorstore=vector,
+    )
+    vector_infos.append(vector_info)
 
 
 @app.post("/v1/embedding")
@@ -82,7 +67,7 @@ async def embedding(request: Request):
     j, llm = await get_params(request)
 
     router_toolkit = VectorStoreRouterToolkit(
-        vectorstores=[philippines_info, south_china_sea_info, tibet_info, xin_jiang_info], llm=llm
+        vectorstores=vector_infos, llm=llm
     )
     agent_executor = create_vectorstore_router_agent(
         llm=llm, toolkit=router_toolkit, verbose=True

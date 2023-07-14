@@ -21,7 +21,8 @@ llm = OpenAI(temperature=0)
 embedding = OpenAIEmbeddings(max_retries=999999999999999999999999999999)
 
 if __name__ == '__main__':
-    queue = ["south_china_sea", "xin_jiang", "philippines", "tibet"]
+    queue = [n.replace("_preprocessed.txt", "") for n in os.listdir("./data") if n.endswith("_preprocessed.txt")]
+    print(queue)
     for q in queue:
         print(f"Loading documents of {q}...")
         loader = TextLoader(f"./data/{q}_preprocessed.txt")
