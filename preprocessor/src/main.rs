@@ -23,6 +23,16 @@ struct JsonData {
     source: Vec<Source>,
 }
 
+#[derive(Serialize, Deserialize)]
+struct JsonDataAlter {
+    #[serde(rename = "Headline")]
+    headline: String,
+    #[serde(rename = "Body")]
+    body: Option<String>,
+    #[serde(rename = "Source")]
+    source: Source,
+}
+
 impl Hash for JsonData {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.body.hash(state);
@@ -37,10 +47,55 @@ impl PartialEq for JsonData {
 
 impl Eq for JsonData {}
 
+impl Hash for JsonDataAlter {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.body.hash(state);
+    }
+}
+
+impl PartialEq for JsonDataAlter {
+    fn eq(&self, other: &Self) -> bool {
+        self.body == other.body
+    }
+}
+
+impl Eq for JsonDataAlter {}
+
+impl Into<JsonData> for JsonDataAlter {
+    fn into(self) -> JsonData {
+        JsonData {
+            headline: self.headline,
+            body: self.body,
+            source: vec![self.source],
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+enum JsonDataEnum {
+    JsonData(JsonData),
+    JsonDataAlter(JsonDataAlter),
+}
+
+impl JsonDataEnum {
+    fn into_json_data(self) -> JsonData {
+        match self {
+            JsonDataEnum::JsonData(x) => x,
+            JsonDataEnum::JsonDataAlter(x) => x.into(),
+        }
+    }
+}
+
+fn into_json_data_vec(data: Vec<JsonDataEnum>) -> Vec<JsonData> {
+    data.into_iter().map(|x| x.into_json_data()).collect()
+}
+
 fn read_data_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<JsonData>, Box<dyn Error>> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     let u = serde_json::from_reader(reader)?;
+    let u = into_json_data_vec(u);
     Ok(u)
 }
 
@@ -77,9 +132,27 @@ static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", "");
 
 fn main() {
     let arg = std::env::args().nth(1).unwrap_or_else(|| {
-        println!("Usage: cargo run --release -- <name>");
+        println!("Usage: cargo run --release -- <name>, if name is 'all' than will process all.");
         std::process::exit(1);
     });
+
+    if arg == "all" {
+        let paths = std::fs::read_dir("../data").unwrap();
+        paths
+            .filter_map(|x| x.ok())
+            .filter(|x| x.path().extension().unwrap() == "json")
+            .map(|x| x.path())
+            .for_each(|x| {
+                let name = x.file_stem().unwrap().to_str().unwrap();
+                println!("======== Processing {} ========", name);
+                process_topic(name);
+            });
+    } else {
+        process_topic(&arg);
+    }
+}
+
+fn process_topic(arg: &str) {
     let original_path = format!("../data/{}.json", arg);
     let path = Path::new(&original_path);
     if !path.exists() {
