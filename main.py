@@ -103,7 +103,7 @@ async def get_params(request):
     if j['llm'] != 'openai':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid provider")
     llm = OpenAI(temperature=0 if 'temperature' not in j else int(j['temperature']))
-    logger.info("Received request: " + str(j))
+    print("Received request: " + str(j))
     return j, llm
 
 
