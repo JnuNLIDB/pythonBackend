@@ -100,6 +100,10 @@ fn read_data_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<JsonData>, Box<dyn
 }
 
 fn chunk_body(body: &str, size: usize) -> Vec<&str> {
+    // If the body is way too large, just return empty vector
+    if body.len() / size > 100 {
+        return Vec::new();
+    }
     // If the body is larger than size, try splitting it into chunks
     if body.len() > size {
         let mut chunks = Vec::new();
@@ -190,7 +194,7 @@ fn process_topic(arg: &str) {
         .collect::<std::collections::HashSet<_>>();
 
     // Write file
-    println!("{} {}Writing to file...", style("[3/4]").bold().dim(), PEN);
+    println!("{} {}Writing to file ({} items)...", style("[3/4]").bold().dim(), PEN, hashset.len());
     let length = hashset.len() / 10;
     let bar = indicatif::ProgressBar::new(length as u64);
     bar.set_style(bar_style);

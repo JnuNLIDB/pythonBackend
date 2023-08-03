@@ -5,8 +5,8 @@ import openai
 
 from openai_embedding import OpenAIEmbeddings
 from langchain import OpenAI
-from langchain.agents import create_vectorstore_agent
-from langchain.agents.agent_toolkits import VectorStoreInfo, VectorStoreToolkit
+from langchain.agents import create_vectorstore_agent, create_vectorstore_router_agent
+from langchain.agents.agent_toolkits import VectorStoreInfo, VectorStoreToolkit, VectorStoreRouterToolkit
 from langchain.vectorstores import Chroma
 
 from config import OPENAI_API_KEY
@@ -31,23 +31,35 @@ embedding = OpenAIEmbeddings(max_retries=999999999999999999999999999999)
 
 print("Loading vector store...")
 embeddings = OpenAIEmbeddings()
-chroma = Chroma(
-    collection_name="news", persist_directory="./news", embedding_function=embeddings
-)
 
 # print("Persisting vector store...")
 # chroma.persist()
 
 print("Creating vector store info...")
-vector_store_info = VectorStoreInfo(
-    name="news",
-    description="the most recent news from people all around the world",
-    vectorstore=chroma,
-)
+names = [
+    'philippines', 'south_china_sea', 'tibet', 'xin_jiang', 'hong_kong', 'taiwan'
+]
+
+vector_infos = []
+for name in names:
+    vector = Chroma(
+        collection_name=name, persist_directory="./news", embedding_function=embeddings
+    )
+    vector_info = VectorStoreInfo(
+        name=name,
+        description="the most recent news of " + name,
+        vectorstore=vector,
+    )
+    vector_infos.append(vector_info)
+
 
 print("Creating agent executor...")
-toolkit = VectorStoreToolkit(vectorstore_info=vector_store_info)
-agent_executor = create_vectorstore_agent(llm=llm, toolkit=toolkit, verbose=True)
+router_toolkit = VectorStoreRouterToolkit(
+    vectorstores=vector_infos, llm=llm
+)
+agent_executor = create_vectorstore_router_agent(
+    llm=llm, toolkit=router_toolkit, verbose=True
+)
 
 if __name__ == '__main__':
     print("Running agent executor...")

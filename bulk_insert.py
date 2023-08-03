@@ -1,6 +1,8 @@
 import os
 
+import chromadb
 import openai
+from chromadb import Settings
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import CharacterTextSplitter
 
@@ -21,6 +23,12 @@ llm = OpenAI(temperature=0)
 embedding = OpenAIEmbeddings(max_retries=999999999999999999999999999999)
 
 if __name__ == '__main__':
+    client = chromadb.Client(chromadb.config.Settings(
+        chroma_db_impl="duckdb+parquet",
+        persist_directory="./news"
+    ))
+    print(list(client.list_collections()))
+
     queue = [n.replace("_preprocessed.txt", "") for n in os.listdir("./data") if n.endswith("_preprocessed.txt")]
     print(queue)
     for q in queue:
@@ -40,4 +48,10 @@ if __name__ == '__main__':
 
         print("Persisting vector store...")
         chroma.persist()
+
+    client = chromadb.Client(chromadb.config.Settings(
+        chroma_db_impl="duckdb+parquet",
+        persist_directory="./news"
+    ))
+    print(client.list_collections())
 

@@ -45,10 +45,9 @@ db = None
 embeddings = OpenAIEmbeddings()
 
 names = [
-    'philippines', 'south_china_sea', 'tibet', 'xin_jiang', 'xi_jin_ping',
-    'one_road', 'china_threat', 'south_china_sea', 'russia_ukraine_conflict_world',
-    'community_of_human_fate', 'russia_ukraine_conflict_china'
+    'philippines', 'south_china_sea', 'tibet', 'xin_jiang', 'hong_kong', 'taiwan', 'xi_jin_ping'
 ]
+
 vector_infos = []
 for name in names:
     vector = Chroma(
