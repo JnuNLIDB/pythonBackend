@@ -64,7 +64,6 @@ for name in names:
 @app.post("/v1/embedding")
 async def embedding(request: Request):
     j, llm = await get_params(request)
-
     router_toolkit = VectorStoreRouterToolkit(
         vectorstores=vector_infos, llm=llm
     )
@@ -104,6 +103,7 @@ async def get_params(request):
     if j['llm'] != 'openai':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid provider")
     llm = OpenAI(temperature=0 if 'temperature' not in j else int(j['temperature']))
+    logger.info("Received request: " + str(j))
     return j, llm
 
 
@@ -113,7 +113,6 @@ async def nlidb(request: Request):
     if db is None:
         db = await AsyncSQLDatabase.from_uri(POSTGRES_URI)
     j, llm = await get_params(request)
-    print(j)
     chat = ChatOpenAI(temperature=1)
 
     with get_openai_callback() as cb:
