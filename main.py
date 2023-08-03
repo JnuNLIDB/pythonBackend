@@ -113,6 +113,7 @@ async def nlidb(request: Request):
     if db is None:
         db = await AsyncSQLDatabase.from_uri(POSTGRES_URI)
     j, llm = await get_params(request)
+    logger.info(j)
     chat = ChatOpenAI(temperature=1)
 
     with get_openai_callback() as cb:
