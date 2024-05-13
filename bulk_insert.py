@@ -2,13 +2,12 @@ import os
 
 import chromadb
 import openai
-from chromadb import Settings
-from langchain.document_loaders import TextLoader
+from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import CharacterTextSplitter
 
-from openai_embedding import OpenAIEmbeddings
-from langchain import OpenAI
-from langchain.vectorstores import Chroma
+from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAI
+from langchain_chroma import Chroma
 
 from config import OPENAI_API_KEY
 
@@ -24,8 +23,7 @@ embedding = OpenAIEmbeddings(max_retries=999999999999999999999999999999)
 
 if __name__ == '__main__':
     client = chromadb.Client(chromadb.config.Settings(
-        chroma_db_impl="duckdb+parquet",
-        persist_directory="./news"
+        persist_directory="./news2"
     ))
     print(list(client.list_collections()))
 
@@ -33,26 +31,22 @@ if __name__ == '__main__':
     print(queue)
     for q in queue:
         print(f"Loading documents of {q}...")
-        loader = TextLoader(f"./data/{q}_preprocessed.txt")
+        loader = TextLoader(f"./data/{q}_preprocessed.txt", encoding="utf-8")
         documents = loader.load()
 
         print("Splitting documents...")
-        text_splitter = CharacterTextSplitter()
+        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
         texts = text_splitter.split_documents(documents)
         print(len(texts))
 
         print("Loading vector store...")
         embeddings = OpenAIEmbeddings()
         chroma = Chroma.from_documents(
-            texts, collection_name=q, persist_directory="./news", embedding=embeddings
+            texts, collection_name=q, persist_directory="./news2", embedding=embeddings
         )
 
-        print("Persisting vector store...")
-        chroma.persist()
-
     client = chromadb.Client(chromadb.config.Settings(
-        chroma_db_impl="duckdb+parquet",
-        persist_directory="./news"
+        persist_directory="./news2"
     ))
     print(client.list_collections())
 

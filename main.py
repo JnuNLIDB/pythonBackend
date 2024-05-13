@@ -4,20 +4,21 @@ import os
 
 import openai
 from fastapi import FastAPI, Request, HTTPException, status
-from langchain import OpenAI
+from langchain_core.callbacks import BaseCallbackHandler, BaseCallbackManager
+from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAI, ChatOpenAI
+from langchain_chroma import Chroma
+
 from langchain.agents import create_vectorstore_agent, create_vectorstore_router_agent
 from langchain.agents.agent_toolkits import VectorStoreInfo, VectorStoreToolkit, VectorStoreRouterToolkit
 from langchain.callbacks import get_openai_callback
-from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
-from langchain.vectorstores import Chroma
 from starlette.middleware.cors import CORSMiddleware
 
 from asyncDBChain import AsyncSQLDatabaseChain
 from asyncDatabase import AsyncSQLDatabase
 from asyncTools import AsyncSQLDatabaseToolkit, create_sql_agent
 from config import OPENAI_API_KEY, POSTGRES_URI
-from openai_embedding import OpenAIEmbeddings
 
 openai.proxy = {
     "http": "http://127.0.0.1:10809",
@@ -44,14 +45,15 @@ db = None
 
 embeddings = OpenAIEmbeddings()
 
+print("Creating vector store info...")
 names = [
-    'philippines', 'south_china_sea', 'tibet', 'xin_jiang', 'hong_kong', 'taiwan', 'xi_jin_ping'
+    'theory'
 ]
 
 vector_infos = []
 for name in names:
     vector = Chroma(
-        collection_name=name, persist_directory="./news", embedding_function=embeddings
+        collection_name=name, persist_directory="./news2", embedding_function=embeddings
     )
     vector_info = VectorStoreInfo(
         name=name,
@@ -59,37 +61,48 @@ for name in names:
         vectorstore=vector,
     )
     vector_infos.append(vector_info)
-vector = Chroma(
-    collection_name="theory", persist_directory="./news", embedding_function=embeddings
-)
-theory = VectorStoreInfo(
-    name="theory",
-    description="Learning theory",
-    vectorstore=vector,
-)
+
+
+class Foo(BaseCallbackHandler):
+    def on_chain_start(
+            self,
+            serialized,
+            inputs,
+            *,
+            run_id=None,
+            parent_run_id=None,
+            tags=None,
+            metadata=None,
+            **kwargs,
+    ):
+        for (i, count) in [('summaries', 2000), ('context', 3000)]:
+            if i in inputs:
+                inputs[i] = inputs[i][:count]
+        if 'question' in inputs:
+            inputs['question'] += " Answer and use tools in chinese!"
+        return BaseCallbackManager(handlers=[Foo()])
 
 
 @app.post("/v1/embedding")
 async def embedding(request: Request):
     j, llm = await get_params(request)
-    if 'theory' in j and j['theory']:
-        router_toolkit = VectorStoreRouterToolkit(
-            vectorstores=[theory], llm=llm
-        )
-        agent_executor = create_vectorstore_router_agent(
-            llm=llm, toolkit=router_toolkit, verbose=True
-        )
-    else:
-        router_toolkit = VectorStoreRouterToolkit(
-            vectorstores=vector_infos, llm=llm
-        )
-        agent_executor = create_vectorstore_router_agent(
-            llm=llm, toolkit=router_toolkit, verbose=True
-        )
+    router_toolkit = VectorStoreToolkit(
+        vectorstore_info=vector_infos[0], llm=llm
+    )
+
+    agent_executor = create_vectorstore_agent(
+        llm=llm, toolkit=router_toolkit, verbose=True,
+        callback_manager=BaseCallbackManager(handlers=[], inheritable_handlers=[Foo()])
+    )
 
     with get_openai_callback() as cb:
         try:
-            result = agent_executor.run(j['question'])
+            result = agent_executor.invoke(
+                j['question'],
+                config={
+                    "callbacks": BaseCallbackManager(handlers=[], inheritable_handlers=[Foo()])
+                }
+            )
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
         finally:

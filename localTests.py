@@ -3,11 +3,12 @@ import os
 
 import openai
 
-from openai_embedding import OpenAIEmbeddings
-from langchain import OpenAI
 from langchain.agents import create_vectorstore_agent, create_vectorstore_router_agent
 from langchain.agents.agent_toolkits import VectorStoreInfo, VectorStoreToolkit, VectorStoreRouterToolkit
-from langchain.vectorstores import Chroma
+from langchain_core.callbacks import BaseCallbackManager, BaseCallbackHandler
+from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAI, ChatOpenAI
+from langchain_chroma import Chroma
 
 from config import OPENAI_API_KEY
 
@@ -18,8 +19,7 @@ openai.proxy = {
 
 os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
 
-llm = OpenAI(temperature=0)
-embedding = OpenAIEmbeddings(max_retries=999999999999999999999999999999)
+llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo-instruct")
 
 # print("Loading documents...")
 # loader = TextLoader("./preprocessed.txt")
@@ -37,13 +37,13 @@ embeddings = OpenAIEmbeddings()
 
 print("Creating vector store info...")
 names = [
-    'philippines', 'south_china_sea', 'tibet', 'xin_jiang', 'hong_kong', 'taiwan'
+    'theory'
 ]
 
 vector_infos = []
 for name in names:
     vector = Chroma(
-        collection_name=name, persist_directory="./news", embedding_function=embeddings
+        collection_name=name, persist_directory="./news2", embedding_function=embeddings
     )
     vector_info = VectorStoreInfo(
         name=name,
@@ -52,35 +52,43 @@ for name in names:
     )
     vector_infos.append(vector_info)
 
-
 print("Creating agent executor...")
-router_toolkit = VectorStoreRouterToolkit(
-    vectorstores=vector_infos, llm=llm
+router_toolkit = VectorStoreToolkit(
+    vectorstore_info=vector_infos[0], llm=llm
 )
-agent_executor = create_vectorstore_router_agent(
-    llm=llm, toolkit=router_toolkit, verbose=True
+
+
+class Foo(BaseCallbackHandler):
+    def on_chain_start(
+            self,
+            serialized,
+            inputs,
+            *,
+            run_id=None,
+            parent_run_id=None,
+            tags=None,
+            metadata=None,
+            **kwargs,
+    ):
+        for (i, count) in [('summaries', 2000), ('context', 3000)]:
+            if i in inputs:
+                inputs[i] = inputs[i][:count]
+        if 'question' in inputs:
+            inputs['question'] += " Answer and use tools in chinese!"
+        return BaseCallbackManager(handlers=[Foo()])
+
+
+agent_executor = create_vectorstore_agent(
+    llm=llm, toolkit=router_toolkit, verbose=True, callback_manager=BaseCallbackManager(handlers=[], inheritable_handlers=[Foo()])
 )
 
 if __name__ == '__main__':
     print("Running agent executor...")
     result = []
     for q in [
-        "What views on the South China Sea have been expressed by U.S. President Joe Biden?",
-        "What are the main South China Sea issues in focus?",
-        "What has U.S. Secretary of State Blinken said about the South China Sea? ",
-        "What did Fumio Kishida say about the South China Sea issue？",
-        "What has Biden said about China in US media reports？",
-        "What has the Philippine media done about the Chinese navy?",
-        "What has the Philippine media reported on the Taiwan issue?",
-        "What Philippine media say about China's military drills",
-        "What does Medel Aguilar think of Balikatan?",
-        "what is Priority defense platform?",
-        "What are Marcos' views on the South China Sea reported by Philippine media",
-        "What is Robin Padilla’s opinion on drugs?",
-        "What is Martin Romualdez's views on China and the United States respectively? What are the differences?",
-        "Cooperation between China and the National Grid Corporation of the Philippines (NGCP)"
+        "新时代新在哪里？",
     ]:
-        resp = agent_executor.run(q)
+        resp = agent_executor.invoke(q, config={"callbacks": BaseCallbackManager(handlers=[], inheritable_handlers=[Foo()])})
         result.append(resp)
 
     print(json.dumps(result, indent=4, ensure_ascii=False))

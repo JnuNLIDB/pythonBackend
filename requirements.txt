@@ -1,6 +1,6 @@
 fastapi==0.99.1
-langchain~=0.0.200
-openai~=0.27.6
+langchain~=0.1.20
+openai~=1.28.1
 sqlalchemy[asyncio]~=2.0.18
 aiosqlite
 pydantic==1.10.10
@@ -10,7 +10,7 @@ elasticsearch
 tqdm~=4.65.0
 json-stream
 tiktoken
-chromadb
+chromadb~=0.4.24
 starlette~=0.27.0
 numpy~=1.25.0
 tenacity~=8.2.2
