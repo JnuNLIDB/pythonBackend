@@ -59,17 +59,33 @@ for name in names:
         vectorstore=vector,
     )
     vector_infos.append(vector_info)
+vector = Chroma(
+    collection_name="theory", persist_directory="./news", embedding_function=embeddings
+)
+theory = VectorStoreInfo(
+    name="theory",
+    description="Learning theory",
+    vectorstore=vector,
+)
 
 
 @app.post("/v1/embedding")
 async def embedding(request: Request):
     j, llm = await get_params(request)
-    router_toolkit = VectorStoreRouterToolkit(
-        vectorstores=vector_infos, llm=llm
-    )
-    agent_executor = create_vectorstore_router_agent(
-        llm=llm, toolkit=router_toolkit, verbose=True
-    )
+    if 'theory' in j and j['theory']:
+        router_toolkit = VectorStoreRouterToolkit(
+            vectorstores=[theory], llm=llm
+        )
+        agent_executor = create_vectorstore_router_agent(
+            llm=llm, toolkit=router_toolkit, verbose=True
+        )
+    else:
+        router_toolkit = VectorStoreRouterToolkit(
+            vectorstores=vector_infos, llm=llm
+        )
+        agent_executor = create_vectorstore_router_agent(
+            llm=llm, toolkit=router_toolkit, verbose=True
+        )
 
     with get_openai_callback() as cb:
         try:
@@ -116,10 +132,12 @@ async def nlidb(request: Request):
     chat = ChatOpenAI(temperature=1)
 
     with get_openai_callback() as cb:
+        print("Using GPT...")
         resp = await chat.agenerate([[HumanMessage(content=j['question'])]])
         resp = resp.generations[0][0].text
         result = "GPT: " + resp + "\n====================\nWith Postgres: "
         try:
+            print("Trying to use LLM Toolkit...")
             toolkit = AsyncSQLDatabaseToolkit(db=db, llm=llm)
             agent_executor = create_sql_agent(
                 llm=llm,
@@ -128,11 +146,13 @@ async def nlidb(request: Request):
             )
             k = await agent_executor.arun(j['question'])
             if "Not related to database" in k:
+                print("Not related to database, using GPT...")
                 k = await chat.agenerate([[HumanMessage(content=j['question'])]])
                 k = k.generations[0][0].text
             result += k
         except Exception as e1:
             try:
+                print("LLM Toolkit failed, using LLM Chain...")
                 chain = AsyncSQLDatabaseChain.from_llm(llm, db)
                 result += await chain.arun(j['question'])
             except Exception as e2:
