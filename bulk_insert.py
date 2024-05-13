@@ -39,6 +39,7 @@ if __name__ == '__main__':
         print("Splitting documents...")
         text_splitter = CharacterTextSplitter()
         texts = text_splitter.split_documents(documents)
+        print(len(texts))
 
         print("Loading vector store...")
         embeddings = OpenAIEmbeddings()
